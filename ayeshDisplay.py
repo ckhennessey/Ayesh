@@ -24,7 +24,7 @@ See: http://pillow.readthedocs.io/en/3.1.x/reference/
 
 # ========== Change the text you want to display, and font, here ================
 
-TEXT = 'This Is A Test Of The Ayesha Messaging System'
+TEXT = 'This is a Test of the Ayesha Messaging System'
 
 FONT = ('/usr/share/fonts/truetype/freefont/FreeSansBold.ttf', 12)
 

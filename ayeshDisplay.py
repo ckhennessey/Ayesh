@@ -1,128 +1,169 @@
 #!/usr/bin/env python
 
 import colorsys
+import math
 import time
-from sys import exit
-
-try:
-    from PIL import Image, ImageDraw, ImageFont
-except ImportError:
-    exit('This script requires the pillow module\nInstall with: sudo pip install pillow')
 
 import unicornhathd
 
 
-print("""Unicorn HAT HD: Text
+print("""Unicorn HAT HD: demo.py
 
-This example shows how to draw, display and scroll text in a regular TrueType font on Unicorn HAT HD.
+This pixel shading demo transitions between 4 classic graphics demo effects.
 
-It uses the Python Pillow/PIL image library, and all other drawing functions are available.
-
-See: http://pillow.readthedocs.io/en/3.1.x/reference/
+Press Ctrl+C to exit!
 
 """)
 
-# ========== Change the text you want to display, and font, here ================
-
-TEXT = 'This is a Test of the Ayesha Messaging System'
-
-FONT = ('/usr/share/fonts/truetype/freefont/FreeSansBold.ttf', 12)
-
-# Use `fc-list` to show a list of installed fonts on your system,
-# or `ls /usr/share/fonts/` and explore.
-
-# sudo apt install fonts-droid
-# FONT = ('/usr/share/fonts/truetype/droid/DroidSans.ttf', 12)
-
-# sudo apt install fonts-roboto
-# FONT = ('/usr/share/fonts/truetype/roboto/Roboto-Bold.ttf', 10)
-
-# ================ Now, let's draw some amazing rainbowy text! ===================
-
-# Get the width/height of Unicorn HAT HD.
-# These will normally be 16x16 but it's good practise not to hard-code such numbers,
-# just in case you want to try and hack together a bigger display later.
-width, height = unicornhathd.get_shape()
-
 unicornhathd.rotation(0)
-unicornhathd.brightness(0.5)
+u_width, u_height = unicornhathd.get_shape()
 
-# We want to draw our text 1 pixel in, and 2 pixels down from the top left corner
-text_x = 1
-text_y = 2
+# Generate a lookup table for 8bit hue to RGB conversion
+hue_to_rgb = []
 
-# Grab our font file and size as defined at the top of the script
-font_file, font_size = FONT
+for i in range(0, 255):
+    hue_to_rgb.append(colorsys.hsv_to_rgb(i / 255.0, 1, 1))
 
-# Load the font using PIL's ImageFont
-font = ImageFont.truetype(font_file, font_size)
 
-# Ask the loaded font how big our text will be
-text_width, text_height = font.getsize(TEXT)
+def gradient(x, y, step):
+    g = x * 16
+    b = y * 16
+    r = 255 - (x * 16)
+    return (r, g, b)
 
-# Make sure we accommodate enough width to account for our text_x left offset
-text_width += width + text_x
 
-# Now let's create a blank canvas wide enough to accomodate our text
-image = Image.new('RGB', (text_width, max(height, text_height)), (0, 0, 0))
+# twisty swirly goodness
+def swirl(x, y, step):
+    x -= (u_width / 2)
+    y -= (u_height / 2)
+    dist = math.sqrt(pow(x, 2) + pow(y, 2)) / 2.0
+    angle = (step / 10.0) + (dist * 1.5)
+    s = math.sin(angle)
+    c = math.cos(angle)
+    xs = x * c - y * s
+    ys = x * s + y * c
+    r = abs(xs + ys)
+    r = r * 12.0
+    r -= 20
+    return (r, r + (s * 130), r + (c * 130))
 
-# To draw on our image, we must use PIL's ImageDraw
-draw = ImageDraw.Draw(image)
 
-# And now we can draw text at our desited (text_x, text_y) offset, using our loaded font
-draw.text((text_x, text_y), TEXT, fill=(255, 255, 255), font=font)
+# roto-zooming checker board
+def checker(x, y, step):
+    x -= (u_width / 2)
+    y -= (u_height / 2)
+    angle = (step / 10.0)
+    s = math.sin(angle)
+    c = math.cos(angle)
+    xs = x * c - y * s
+    ys = x * s + y * c
+    xs -= math.sin(step / 200.0) * 40.0
+    ys -= math.cos(step / 200.0) * 40.0
+    scale = step % 20
+    scale /= 20
+    scale = (math.sin(step / 50.0) / 8.0) + 0.25
+    xs *= scale
+    ys *= scale
+    xo = abs(xs) - int(abs(xs))
+    yo = abs(ys) - int(abs(ys))
+    v = 0 if (math.floor(xs) + math.floor(ys)) % 2 else 1 if xo > .1 and yo > .1 else .5
+    r, g, b = hue_to_rgb[step % 255]
+    return (r * (v * 255), g * (v * 255), b * (v * 255))
 
-# To give an appearance of scrolling text, we move a 16x16 "window" across the image we generated above
-# The value "scroll" denotes how far this window is from the left of the image.
-# Since the window is "width" pixels wide (16 for UHHD) and we don't want it to run off the end of the,
-# image, we subtract "width".
-for scroll in range(text_width - width):
-    for x in range(width):
 
-        # Figure out what hue value we want at this point.
-        # "x" is the position of the pixel on Unicorn HAT HD from 0 to 15
-        # "scroll" is how far offset from the left of our text image we are
-        # We want the text to be a complete cycle around the hue in the HSV colour space
-        # so we divide the pixel's position (x + scroll) by the total width of the text
-        # If this pixel were half way through the text, it would result in the number 0.5 (180 degrees)
-        hue = (x + scroll) / float(text_width)
+# weeee waaaah
+def blues_and_twos(x, y, step):
+    x -= (u_width / 2)
+    y -= (u_height / 2)
+    scale = math.sin(step / 6.0) / 1.5
+    r = math.sin((x * scale) / 1.0) + math.cos((y * scale) / 1.0)
+    b = math.sin(x * scale / 2.0) + math.cos(y * scale / 2.0)
+    g = r - .8
+    g = 0 if g < 0 else g
+    b -= r
+    b /= 1.4
+    return (r * 255, (b + g) * 255, g * 255)
 
-        # Now we need to convert our "hue" value into r,g,b since that's what colour space our
-        # image is in, and also what Unicorn HAT HD understands.
-        # This list comprehension is just a tidy way of converting the range 0.0 to 1.0
-        # that hsv_to_rgb returns into integers in the range 0-255.
-        # hsv_to_rgb returns a tuple of (r, g, b)
-        br, bg, bb = [int(n * 255) for n in colorsys.hsv_to_rgb(hue, 1.0, 1.0)]
 
-        # Since our rainbow runs from left to right along the x axis, we can calculate it once
-        # for every vertical line on the display, and then re-use that value 16 times below:
+# rainbow search spotlights
+def rainbow_search(x, y, step):
+    xs = math.sin((step) / 100.0) * 20.0
+    ys = math.cos((step) / 100.0) * 20.0
+    scale = ((math.sin(step / 60.0) + 1.0) / 5.0) + 0.2
+    r = math.sin((x + xs) * scale) + math.cos((y + xs) * scale)
+    g = math.sin((x + xs) * scale) + math.cos((y + ys) * scale)
+    b = math.sin((x + ys) * scale) + math.cos((y + ys) * scale)
+    return (r * 255, g * 255, b * 255)
 
-        for y in range(height):
-            # Get the r, g, b colour triplet from pixel x,y of our text image
-            # Our text is white on a black background, so these will all be shades of black/grey/white
-            # ie 255,255,255 or 0,0,0 or 128,128,128
-            pixel = image.getpixel((x + scroll, y))
 
-            # Now we want to turn the colour of our text - shades of grey remember - into a mask for our rainbow.
-            # We do this by dividing it by 255, which converts it to the range 0.0 to 1.0
-            r, g, b = [float(n / 255.0) for n in pixel]
+# zoom tunnel
+def tunnel(x, y, step):
+    speed = step / 100.0
+    x -= (u_width / 2)
+    y -= (u_height / 2)
+    xo = math.sin(step / 27.0) * 2
+    yo = math.cos(step / 18.0) * 2
+    x += xo
+    y += yo
+    if y == 0:
+        if x < 0:
+            angle = -(math.pi / 2)
+        else:
+            angle = (math.pi / 2)
+    else:
+        angle = math.atan(x / y)
+    if y > 0:
+        angle += math.pi
+    angle /= 2 * math.pi  # convert angle to 0...1 range
+    hyp = math.sqrt(math.pow(x, 2) + math.pow(y, 2))
+    shade = hyp / 2.1
+    shade = 1 if shade > 1 else shade
+    angle += speed
+    depth = speed + (hyp / 10)
+    col1 = hue_to_rgb[step % 255]
+    col1 = (col1[0] * 0.8, col1[1] * 0.8, col1[2] * 0.8)
+    col2 = hue_to_rgb[step % 255]
+    col2 = (col2[0] * 0.3, col2[1] * 0.3, col2[2] * 0.3)
+    col = col1 if int(abs(angle * 6.0)) % 2 == 0 else col2
+    td = .3 if int(abs(depth * 3.0)) % 2 == 0 else 0
+    col = (col[0] + td, col[1] + td, col[2] + td)
+    col = (col[0] * shade, col[1] * shade, col[2] * shade)
+    return (col[0] * 255, col[1] * 255, col[2] * 255)
 
-            # We can now use our 0.0 to 1.0 range to scale our three colour values, controlling the amount
-            # of rainbow that gets blended in.
-            # 0.0 would blend no rainbow
-            # 1.0 would blend 100% rainbow
-            # and anything in between would copy the anti-aliased edges from our text
-            r = int(br * r)
-            g = int(bg * g)
-            b = int(bb * b)
 
-            # Finally we colour in our finished pixel on Unicorn HAT HD
-            unicornhathd.set_pixel(width - 1 - x, y, r, g, b)
+def current_milli_time():
+    return int(round(time.time() * 1000))
 
-    # Finally, for each step in our scroll, we show the result on Unicorn HAT HD
-    unicornhathd.show()
 
-    # And sleep for a little bit, so it doesn't scroll too quickly!
-    time.sleep(0.02)
+effects = [gradient, tunnel, rainbow_search, checker, swirl]
 
-unicornhathd.off()
+
+step = 0
+
+try:
+    while True:
+        for i in range(100):
+            start = current_milli_time()
+            for y in range(u_height):
+                for x in range(u_width):
+                    r, g, b = effects[0](x, y, step)
+                    if i > 75:
+                        r2, g2, b2 = effects[-1](x, y, step)
+                        ratio = (100.00 - i) / 25.0
+                        r = r * ratio + r2 * (1.0 - ratio)
+                        g = g * ratio + g2 * (1.0 - ratio)
+                        b = b * ratio + b2 * (1.0 - ratio)
+                    r = int(max(0, min(255, r)))
+                    g = int(max(0, min(255, g)))
+                    b = int(max(0, min(255, b)))
+                    unicornhathd.set_pixel(x, y, r, g, b)
+
+            step += 2
+
+            unicornhathd.show()
+
+        effect = effects.pop()
+        effects.insert(0, effect)
+
+except KeyboardInterrupt:
+    unicornhathd.off()

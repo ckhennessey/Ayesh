@@ -24,7 +24,7 @@ See: http://pillow.readthedocs.io/en/3.1.x/reference/
 
 # ========== Change the text you want to display, and font, here ================
 
-TEXT = 'Hey Ayesha! Merry Christophermas! I really wish I could be with you today, but I know soon enough, I will get to be with you once again. I love you so much Ayesh its insane! You mean the world to me, you really do! Have the most amazing Christmas ever! ~Love Chris <3'
+TEXT = 'Hey Ayesha! Merry Christophermas! I really wish I could be with you today, but I know soon enough, I will get to be with you once again. I love you so much Ayesh its insane! You mean the world to me, you really do! Have the most amazing Christmas ever! ~Love Chris ♥︎'
 
 FONT = ('/usr/share/fonts/truetype/freefont/FreeSansBold.ttf', 12)
 

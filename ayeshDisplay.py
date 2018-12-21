@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import unicornhathhd as unicorn
 import time, colorsys
 import numpy

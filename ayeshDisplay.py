@@ -1,128 +1,207 @@
-#!/usr/bin/env python
+"""
+Program: Battleships Unicorn Hat display
+Author: Tim Mulford
+Date: 08/02/2015
+Version: 0.2
+Python3
+"""
 
-import colorsys
-import time
-from sys import exit
+#import libraries
+import unicornhat as unicorn
+import time, random
 
-try:
-    from PIL import Image, ImageDraw, ImageFont
-except ImportError:
-    exit('This script requires the pillow module\nInstall with: sudo pip install pillow')
+# create initial grid
+def create_sea():
+    # initialise blank grid
+    grid = [[0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0]]
 
-import unicornhathd
+    # generate position for battleship
+    x = random.randint(0,3)
+    y = random.randint(0,7)
 
+    # place battleship
+    for a in range(5):
+        grid[y][x+a]=1
 
-print("""Unicorn HAT HD: Text
+    # generate co-ordinate for cruiser
+    x = random.randint(0,5)
+    y = random.randint(0,7)
 
-This example shows how to draw, display and scroll text in a regular TrueType font on Unicorn HAT HD.
+    # check if the generated co-ordinates are clear
+    # regenerate co-ordinates until a clear position is found
+    while [grid[y][x],grid[y][x+1],grid[y][x+2]] != [0,0,0]:
+        x = random.randint(0,5)
+        y = random.randint(0,7)
 
-It uses the Python Pillow/PIL image library, and all other drawing functions are available.
+    # place cruiser
+    for a in range(3):
+        grid[y][x+a]=1
 
-See: http://pillow.readthedocs.io/en/3.1.x/reference/
+    # generate co-ordintes for patrol boat   
+    x = random.randint(0,6)
+    y = random.randint(0,7)
 
-""")
+    # check if the geneated co-ordinates are clear
+    # regenerate co-ordinates until a clear position is found
+    while [grid[y][x],grid[y][x+1]] != [0,0]:
+        x = random.randint(0,6)
+        y = random.randint(0,7)
 
-# ========== Change the text you want to display, and font, here ================
+    # place patrol boat
+    for a in range(2):
+        grid[y][x+a]=1
 
-TEXT = 'Hey Ayesha! How Are You?'
+    # used for testing grid generated properly
+    # displays grid to screen
+    #for row in grid:
+    #    print(row)
+        
+    return(grid)
 
-FONT = ('/usr/share/fonts/truetype/freefont/FreeSansBold.ttf', 12)
+# display the current state of the sea
+# blue LED for undisturbed sea
+# red LED for HIT
+# unlit for MISS
+def display_sea(sea):
+    for y in range(8):
+        for x in range(8):
+            if sea[y][x] == 0 or sea[y][x] == 1:
+                unicorn.set_pixel(x,y,79,106,226)
+            if sea[y][x] == 2:
+                unicorn.set_pixel(x,y,66,68,77)
+            if sea[y][x] == 3:
+                unicorn.set_pixel(x,y,214,28,31)
+    unicorn.show()
 
-# Use `fc-list` to show a list of installed fonts on your system,
-# or `ls /usr/share/fonts/` and explore.
+# set the whole display to colour of the passed RGB code
+def flood_colour(red,green,blue):
+    for x in range(8):
+        for y in range(8):
+            unicorn.set_pixel(x,y,red,green,blue)
+    unicorn.show()
 
-# sudo apt install fonts-droid
-# FONT = ('/usr/share/fonts/truetype/droid/DroidSans.ttf', 12)
+# repeat game loop
+while True:
 
-# sudo apt install fonts-roboto
-# FONT = ('/usr/share/fonts/truetype/roboto/Roboto-Bold.ttf', 10)
+    # initilse game conditions
+    sea = create_sea()
+    ammo = 20
+    ships = 10
+    game_over = False
 
-# ================ Now, let's draw some amazing rainbowy text! ===================
+    # display game grid on unicorn hat
+    display_sea(sea)
 
-# Get the width/height of Unicorn HAT HD.
-# These will normally be 16x16 but it's good practise not to hard-code such numbers,
-# just in case you want to try and hack together a bigger display later.
-width, height = unicornhathd.get_shape()
+    # repeat until end of game condition met
+    while game_over == False:
 
-unicornhathd.rotation(0)
-unicornhathd.brightness(0.5)
+        # display remaining ammo
+        print("You have",ammo,"shots left")
+        
+        # capture x co-ordinate from player
+        x = int(input("Enter the x co-ordinate for your shot: ")) - 1
 
-# We want to draw our text 1 pixel in, and 2 pixels down from the top left corner
-text_x = 1
-text_y = 2
+        while x not in (0,1,2,3,4,5,6,7):
+            print(x+1,"is not in range try again")
+            x = int(input("Enter the x co-ordinate for your shot: ")) - 1
+            
+        for a in range(8):
+            unicorn.set_pixel(x,a,0,150,0)
+            unicorn.show()
+            time.sleep(0.05)
+                
 
-# Grab our font file and size as defined at the top of the script
-font_file, font_size = FONT
+        # capture y co-ordinate from player
+        y = 8 - int(input("Enter the y co-ordinate for your shot: "))
 
-# Load the font using PIL's ImageFont
-font = ImageFont.truetype(font_file, font_size)
+        while y not in (0,1,2,3,4,5,6,7):
+            print(8 - y,"is not in range try again")
+            y = 8 - int(input("Enter the y co-ordinate for your shot: "))
 
-# Ask the loaded font how big our text will be
-text_width, text_height = font.getsize(TEXT)
+        for a in range(8):
+            unicorn.set_pixel(a,y,0,150,0)
+            unicorn.show()
+            time.sleep(0.05)
 
-# Make sure we accommodate enough width to account for our text_x left offset
-text_width += width + text_x
+        # pause 1 second
+        time.sleep(1)
 
-# Now let's create a blank canvas wide enough to accomodate our text
-image = Image.new('RGB', (text_width, max(height, text_height)), (0, 0, 0))
+        # highlight aimed co-ordinate
+        
+        for a in range(0,255,5):
+            unicorn.set_pixel(x,y,a,a,a)
+            unicorn.show()
+            
+        for a in range(0,255,5):
+            unicorn.set_pixel(x,y,255-a,255-a,255-a)
+            unicorn.show()
 
-# To draw on our image, we must use PIL's ImageDraw
-draw = ImageDraw.Draw(image)
+        # check if shot is a hit
+        # if a ship is hit flash green to unicorn hat and update number
+        # of remaining ships and grid.
+        # if the shot misses flash red to unicorn hat.
+        # Update grid and display updated sea on the unicorn hat
+        if sea[y][x] == 1:
+            print("Hit")
+            for repeat in range(3):
+                flood_colour(0,255,0)
+                time.sleep(0.2)
+                flood_colour(0,0,0)
+                time.sleep(0.2)
+                
+            sea[y][x] = 3
+            ships = ships - 1
+            display_sea(sea)
+            
+        else:
+            print("Miss")
+            for repeat in range(3):
+                flood_colour(255,0,0)
+                time.sleep(0.2)
+                flood_colour(0,0,0)
+                time.sleep(0.2)
+                
+            sea[y][x] = 2
+            ammo = ammo - 1
+            display_sea(sea)
 
-# And now we can draw text at our desited (text_x, text_y) offset, using our loaded font
-draw.text((text_x, text_y), TEXT, fill=(255, 255, 255), font=font)
+        # check if either game over condition has been met.
+        # if it has set game_over to true
+        if ships == 0 or ammo == 0:
+            game_over = True
 
-# To give an appearance of scrolling text, we move a 16x16 "window" across the image we generated above
-# The value "scroll" denotes how far this window is from the left of the image.
-# Since the window is "width" pixels wide (16 for UHHD) and we don't want it to run off the end of the,
-# image, we subtract "width".
-for scroll in range(text_width - width):
-    for x in range(width):
+    # if game was ended with no ammo
+    # display defeat animation on unicorn hat
+    if ammo == 0:
+        print("Our fleet is defeated.")
+        for y in range(8):
+            for x in range(8):
+                for fade in range(0,255,50):
+                    unicorn.set_pixel(x,y,255,255-fade,255-fade)
+                    unicorn.show()
+            
+    # if game was ended with no ships left
+    # display victory animation on unicorn hat
+    if ships == 0:
+        print("Our fleet is victorious.")
+        for y in range(8):
+            for x in range(8):
+                for fade in range(0,255,50):
+                    unicorn.set_pixel(x,y,255-fade,255,255-fade)
+                    unicorn.show()
 
-        # Figure out what hue value we want at this point.
-        # "x" is the position of the pixel on Unicorn HAT HD from 0 to 15
-        # "scroll" is how far offset from the left of our text image we are
-        # We want the text to be a complete cycle around the hue in the HSV colour space
-        # so we divide the pixel's position (x + scroll) by the total width of the text
-        # If this pixel were half way through the text, it would result in the number 0.5 (180 degrees)
-        hue = (x + scroll) / float(text_width)
+    # prompt user for a rematch
+    # if the user says no then break loop and end program
+    repeat = input("Do you want a rematch? ").lower()
 
-        # Now we need to convert our "hue" value into r,g,b since that's what colour space our
-        # image is in, and also what Unicorn HAT HD understands.
-        # This list comprehension is just a tidy way of converting the range 0.0 to 1.0
-        # that hsv_to_rgb returns into integers in the range 0-255.
-        # hsv_to_rgb returns a tuple of (r, g, b)
-        br, bg, bb = [int(n * 255) for n in colorsys.hsv_to_rgb(hue, 1.0, 1.0)]
-
-        # Since our rainbow runs from left to right along the x axis, we can calculate it once
-        # for every vertical line on the display, and then re-use that value 16 times below:
-
-        for y in range(height):
-            # Get the r, g, b colour triplet from pixel x,y of our text image
-            # Our text is white on a black background, so these will all be shades of black/grey/white
-            # ie 255,255,255 or 0,0,0 or 128,128,128
-            pixel = image.getpixel((x + scroll, y))
-
-            # Now we want to turn the colour of our text - shades of grey remember - into a mask for our rainbow.
-            # We do this by dividing it by 255, which converts it to the range 0.0 to 1.0
-            r, g, b = [float(n / 255.0) for n in pixel]
-
-            # We can now use our 0.0 to 1.0 range to scale our three colour values, controlling the amount
-            # of rainbow that gets blended in.
-            # 0.0 would blend no rainbow
-            # 1.0 would blend 100% rainbow
-            # and anything in between would copy the anti-aliased edges from our text
-            r = int(br * r)
-            g = int(bg * g)
-            b = int(bb * b)
-
-            # Finally we colour in our finished pixel on Unicorn HAT HD
-            unicornhathd.set_pixel(width - 1 - x, y, r, g, b)
-
-    # Finally, for each step in our scroll, we show the result on Unicorn HAT HD
-    unicornhathd.show()
-
-    # And sleep for a little bit, so it doesn't scroll too quickly!
-    time.sleep(0.02)
-
-unicornhathd.off()
+    if repeat in ["no","n"]:
+        print("Thanks for playing")
+        break
+    

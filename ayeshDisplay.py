@@ -1,207 +1,300 @@
-"""
-Program: Battleships Unicorn Hat display
-Author: Tim Mulford
-Date: 08/02/2015
-Version: 0.2
-Python3
-"""
+#!/usr/bin/env python
 
-#import libraries
-import unicornhat as unicorn
-import time, random
+import time
+import datetime
 
-# create initial grid
-def create_sea():
-    # initialise blank grid
-    grid = [[0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,0,0]]
+try:
+    import unicornhathd as unicorn
+    print("unicorn hat hd detected")
+except ImportError:
+    from unicorn_hat_sim import unicornhathd as unicorn
 
-    # generate position for battleship
-    x = random.randint(0,3)
-    y = random.randint(0,7)
+unicorn.rotation(180)
+unicorn.brightness(0.5)
 
-    # place battleship
-    for a in range(5):
-        grid[y][x+a]=1
+secondsProgressRow = 10
 
-    # generate co-ordinate for cruiser
-    x = random.randint(0,5)
-    y = random.randint(0,7)
+# There are 4 different types of patterns used when generating
+# a number that is to be placed in a rectangle 3X5 pixels. Combinations of these
+# are used to create a number pattern such as:
+#   * * *
+#   *
+#   * * *
+#   *   *
+#   * * *
 
-    # check if the generated co-ordinates are clear
-    # regenerate co-ordinates until a clear position is found
-    while [grid[y][x],grid[y][x+1],grid[y][x+2]] != [0,0,0]:
-        x = random.randint(0,5)
-        y = random.randint(0,7)
+# 1) * * * Full Row
+# 2) *   * Both Sides
+# 3)     * Right Side
+# 4) *     Left Side
 
-    # place cruiser
-    for a in range(3):
-        grid[y][x+a]=1
+# Composition methods
+def fullLine(start, row):
+  for x in range(start, start+3):
+    unicorn.set_pixel(x, row, 255, 255, 255)
 
-    # generate co-ordintes for patrol boat   
-    x = random.randint(0,6)
-    y = random.randint(0,7)
+def bothSides(start, row):
+  unicorn.set_pixel(start, row, 255, 255, 255)
+  unicorn.set_pixel(start+2, row, 255, 255, 255)
 
-    # check if the geneated co-ordinates are clear
-    # regenerate co-ordinates until a clear position is found
-    while [grid[y][x],grid[y][x+1]] != [0,0]:
-        x = random.randint(0,6)
-        y = random.randint(0,7)
+def leftSide(start, row):
+  unicorn.set_pixel(start, row, 255, 255, 255)
 
-    # place patrol boat
-    for a in range(2):
-        grid[y][x+a]=1
+def rightSide(start, row):
+  unicorn.set_pixel(start+2, row, 255, 255, 255)
 
-    # used for testing grid generated properly
-    # displays grid to screen
-    #for row in grid:
-    #    print(row)
-        
-    return(grid)
+# Numbers
+def displayZero(x, y):
+  clearNumberPixels(x, y)
+  fullLine(x, y)
+  bothSides(x, y-1)
+  bothSides(x, y-2)
+  bothSides(x, y-3)
+  fullLine(x, y-4)
+  unicorn.show()
 
-# display the current state of the sea
-# blue LED for undisturbed sea
-# red LED for HIT
-# unlit for MISS
-def display_sea(sea):
-    for y in range(8):
-        for x in range(8):
-            if sea[y][x] == 0 or sea[y][x] == 1:
-                unicorn.set_pixel(x,y,79,106,226)
-            if sea[y][x] == 2:
-                unicorn.set_pixel(x,y,66,68,77)
-            if sea[y][x] == 3:
-                unicorn.set_pixel(x,y,214,28,31)
+def displayOne(x, y):
+  clearNumberPixels(x, y)
+  rightSide(x, y)
+  rightSide(x, y-1)
+  rightSide(x, y-2)
+  rightSide(x, y-3)
+  rightSide(x, y-4)
+  unicorn.show()
+
+def displayTwo(x, y):
+  clearNumberPixels(x, y)
+  fullLine(x, y)
+  rightSide(x, y-1)
+  fullLine(x, y-2)
+  leftSide(x, y-3)
+  fullLine(x, y-4)
+  unicorn.show()
+
+def displayThree(x, y):
+  clearNumberPixels(x, y)
+  fullLine(x, y)
+  rightSide(x, y-1)
+  fullLine(x, y-2)
+  rightSide(x, y-3)
+  fullLine(x, y-4)
+  unicorn.show()
+
+def displayFour(x, y):
+  clearNumberPixels(x, y)
+  bothSides(x, y)
+  bothSides(x, y-1)
+  fullLine(x, y-2)
+  rightSide(x, y-3)
+  rightSide(x, y-4)
+  unicorn.show()
+
+def displayFive(x, y):
+  clearNumberPixels(x, y)
+  fullLine(x, y)
+  leftSide(x, y-1)
+  fullLine(x, y-2)
+  rightSide(x, y-3)
+  fullLine(x, y-4)
+  unicorn.show()
+
+def displaySix(x, y):
+  clearNumberPixels(x, y)
+  fullLine(x, y)
+  leftSide(x, y-1)
+  fullLine(x, y-2)
+  bothSides(x, y-3)
+  fullLine(x, y-4)
+  unicorn.show()
+
+def displaySeven(x, y):
+  clearNumberPixels(x, y)
+  fullLine(x, y)
+  rightSide(x, y-1)
+  rightSide(x, y-2)
+  rightSide(x, y-3)
+  rightSide(x, y-4)
+  unicorn.show()
+
+def displayEight(x, y):
+  clearNumberPixels(x, y)
+  fullLine(x, y)
+  bothSides(x, y-1)
+  fullLine(x, y-2)
+  bothSides(x, y-3)
+  fullLine(x, y-4)
+  unicorn.show()
+
+def displayNine(x, y):
+  clearNumberPixels(x, y)
+  fullLine(x, y)
+  bothSides(x, y-1)
+  fullLine(x, y-2)
+  rightSide(x, y-3)
+  fullLine(x, y-4)
+  unicorn.show()
+
+def displayNumber(x,y, number):
+  if number == 0:
+    displayZero(x,y)
+  elif number == 1:
+    displayOne(x,y)
+  elif number == 2:
+    displayTwo(x,y)
+  elif number == 3:
+    displayThree(x,y)
+  elif number == 4:
+    displayFour(x,y)
+  elif number == 5:
+    displayFive(x,y)
+  elif number == 6:
+    displaySix(x,y)
+  elif number == 7:
+    displaySeven(x,y)
+  elif number == 8:
+    displayEight(x,y)
+  elif number == 9:
+    displayNine(x,y)
+
+# Clears the pixels in a rectangle. x,y is the top left corner of the rectangle
+# and its dimensions are 3X5
+def clearNumberPixels(x, y):
+  for y1 in range(y, y-5, -1):
+    for x1 in range(x, x+3):
+      # print("x1 = "+str(x1)+" y1 = "+str(y1))
+      unicorn.set_pixel(x1, y1, 0, 0, 0)
+  unicorn.show()
+
+def displayTimeDots(x, y):
+  unicorn.set_pixel(x, y-1, 255, 0, 0)
+  unicorn.set_pixel(x, y-3, 255, 0, 0)
+  unicorn.show()
+
+def displayDateDots(x, y):
+  unicorn.set_pixel(x+1, y, 255, 0, 0)
+  unicorn.set_pixel(x+1, y-1, 255, 0, 0)
+  unicorn.set_pixel(x+1, y-2, 255, 0, 0)
+  unicorn.set_pixel(x, y-2, 255, 0, 0)
+  unicorn.set_pixel(x, y-3, 255, 0, 0)
+  unicorn.set_pixel(x, y-4, 255, 0, 0)
+  unicorn.show()  
+
+# Gets a specific part of the current time, passed to strftime, then it is
+# split into its individual numbers and converted into integers. Used to feed
+# the display with numbers
+def getMinuteParts():
+  minute = datetime.datetime.now().strftime("%M")
+  return [int(x) for x in minute]
+
+def getTimeParts(timePart):
+  parts = datetime.datetime.now().strftime(timePart)
+  return [int(x) for x in parts]  
+
+def setStartingSecondsProgressRow():
+  # Grey starting bit
+  unicorn.set_pixel(0, secondsProgressRow, 100, 100, 100)
+  unicorn.set_pixel(1, secondsProgressRow, 100, 100, 100)
+
+  # Making red part
+  for x in range(2,14):
+    unicorn.set_pixel(x, secondsProgressRow, 200, 50, 50)
+
+  # Grey ending bit
+  unicorn.set_pixel(14, secondsProgressRow, 100, 100, 100)
+  unicorn.set_pixel(15, secondsProgressRow, 100, 100, 100)
+
+displayedHourParts = getTimeParts('%H')
+displayedMinuteParts = getTimeParts('%M')
+displayedMonthParts = getTimeParts('%m')
+displayedDayParts = getTimeParts('%d')
+
+# Display Current Time
+displayNumber(0,15, displayedHourParts[0])
+displayNumber(4,15, displayedHourParts[1])
+displayTimeDots(7,15)
+displayNumber(9,15, displayedMinuteParts[0])
+displayNumber(13,15, displayedMinuteParts[1])
+
+# Display Day and Month
+displayNumber(0,9, displayedDayParts[0])
+displayNumber(4,9, displayedDayParts[1])
+displayDateDots(7,9)
+displayNumber(9,9, displayedMonthParts[0])
+displayNumber(13,9, displayedMonthParts[1])
+
+# set the seconds progress row
+setStartingSecondsProgressRow()
+
+current_milli_time = lambda: int(round(time.time() * 1000))
+
+step = 0
+
+try:
+  while True:
+    hourParts = getTimeParts('%H')
+    minuteParts = getTimeParts('%M')
+    dayParts = getTimeParts('%d')
+    monthParts = getTimeParts('%m')
+
+    # TIME Details
+    # Only update first hour number if it is different to what is currently displayed
+    if hourParts[0] != displayedHourParts[0]:
+      displayedHourParts[0] = hourParts[0]
+      displayNumber(0,15, hourParts[0])
+
+    # Only update second hour number if it is different to what is currently displayed
+    if hourParts[1] != displayedHourParts[1]:
+      displayedHourParts[1] = hourParts[1]
+      displayNumber(4,15, hourParts[1])
+
+    # Only update first minute number if it is different to what is currently displayed
+    if minuteParts[0] != displayedMinuteParts[0]:
+      displayedMinuteParts[0] = minuteParts[0]
+      displayNumber(9,15, minuteParts[0])
+
+    # Only update second minute number if it is different to what is currently displayed
+    if minuteParts[1] != displayedMinuteParts[1]:
+      displayedMinuteParts[1] = minuteParts[1]
+      displayNumber(13,15, minuteParts[1])
+
+    # MONTH Details
+    # Only update first day number if it is different to what is currently displayed
+    if dayParts[0] != displayedDayParts[0]:
+      displayedDayParts[0] = dayParts[0]
+      displayNumber(0,9, dayParts[0])
+
+    # Only update second day number if it is different to what is currently displayed
+    if dayParts[1] != displayedDayParts[1]:
+      displayedDayParts[1] = dayParts[1]
+      displayNumber(4,9, dayParts[1])
+
+    # Only update first month number if it is different to what is currently displayed
+    if monthParts[0] != displayedMonthParts[0]:
+      displayedMonthParts[0] = monthParts[0]
+      displayNumber(9,9, monthParts[0])
+
+    # Only update second month number if it is different to what is currently displayed
+    if monthParts[1] != displayedMonthParts[1]:
+      displayedMonthParts[1] = monthParts[1]
+      displayNumber(13,9, monthParts[1])
+
+    # Calculating how many seconds pixels to light up
+    currentSeconds = datetime.datetime.now().second
+    percentOfMinuteComplete = int((float(currentSeconds)/60.0)*100)
+    pixelsToLightUp = int((12.0/100.0)*float(percentOfMinuteComplete))
+
+    # Make the whole progress row red
+    if pixelsToLightUp == 0:
+      setStartingSecondsProgressRow()
+
+    # Making completed pixels green
+    for x in range(2, pixelsToLightUp+2):
+      unicorn.set_pixel(x, secondsProgressRow, 0, 100, 0)
+
+    # Setting current pixel brighter green
+    unicorn.set_pixel(pixelsToLightUp+2, secondsProgressRow, 0, 255, 0)
     unicorn.show()
-
-# set the whole display to colour of the passed RGB code
-def flood_colour(red,green,blue):
-    for x in range(8):
-        for y in range(8):
-            unicorn.set_pixel(x,y,red,green,blue)
-    unicorn.show()
-
-# repeat game loop
-while True:
-
-    # initilse game conditions
-    sea = create_sea()
-    ammo = 20
-    ships = 10
-    game_over = False
-
-    # display game grid on unicorn hat
-    display_sea(sea)
-
-    # repeat until end of game condition met
-    while game_over == False:
-
-        # display remaining ammo
-        print("You have",ammo,"shots left")
-        
-        # capture x co-ordinate from player
-        x = int(input("Enter the x co-ordinate for your shot: ")) - 1
-
-        while x not in (0,1,2,3,4,5,6,7):
-            print(x+1,"is not in range try again")
-            x = int(input("Enter the x co-ordinate for your shot: ")) - 1
-            
-        for a in range(8):
-            unicorn.set_pixel(x,a,0,150,0)
-            unicorn.show()
-            time.sleep(0.05)
-                
-
-        # capture y co-ordinate from player
-        y = 8 - int(input("Enter the y co-ordinate for your shot: "))
-
-        while y not in (0,1,2,3,4,5,6,7):
-            print(8 - y,"is not in range try again")
-            y = 8 - int(input("Enter the y co-ordinate for your shot: "))
-
-        for a in range(8):
-            unicorn.set_pixel(a,y,0,150,0)
-            unicorn.show()
-            time.sleep(0.05)
-
-        # pause 1 second
-        time.sleep(1)
-
-        # highlight aimed co-ordinate
-        
-        for a in range(0,255,5):
-            unicorn.set_pixel(x,y,a,a,a)
-            unicorn.show()
-            
-        for a in range(0,255,5):
-            unicorn.set_pixel(x,y,255-a,255-a,255-a)
-            unicorn.show()
-
-        # check if shot is a hit
-        # if a ship is hit flash green to unicorn hat and update number
-        # of remaining ships and grid.
-        # if the shot misses flash red to unicorn hat.
-        # Update grid and display updated sea on the unicorn hat
-        if sea[y][x] == 1:
-            print("Hit")
-            for repeat in range(3):
-                flood_colour(0,255,0)
-                time.sleep(0.2)
-                flood_colour(0,0,0)
-                time.sleep(0.2)
-                
-            sea[y][x] = 3
-            ships = ships - 1
-            display_sea(sea)
-            
-        else:
-            print("Miss")
-            for repeat in range(3):
-                flood_colour(255,0,0)
-                time.sleep(0.2)
-                flood_colour(0,0,0)
-                time.sleep(0.2)
-                
-            sea[y][x] = 2
-            ammo = ammo - 1
-            display_sea(sea)
-
-        # check if either game over condition has been met.
-        # if it has set game_over to true
-        if ships == 0 or ammo == 0:
-            game_over = True
-
-    # if game was ended with no ammo
-    # display defeat animation on unicorn hat
-    if ammo == 0:
-        print("Our fleet is defeated.")
-        for y in range(8):
-            for x in range(8):
-                for fade in range(0,255,50):
-                    unicorn.set_pixel(x,y,255,255-fade,255-fade)
-                    unicorn.show()
-            
-    # if game was ended with no ships left
-    # display victory animation on unicorn hat
-    if ships == 0:
-        print("Our fleet is victorious.")
-        for y in range(8):
-            for x in range(8):
-                for fade in range(0,255,50):
-                    unicorn.set_pixel(x,y,255-fade,255,255-fade)
-                    unicorn.show()
-
-    # prompt user for a rematch
-    # if the user says no then break loop and end program
-    repeat = input("Do you want a rematch? ").lower()
-
-    if repeat in ["no","n"]:
-        print("Thanks for playing")
-        break
-    
+    # Sleep for 0.5 because the display doesn't need to update that often
+    time.sleep(0.5)
+except KeyboardInterrupt:
+  unicorn.off()

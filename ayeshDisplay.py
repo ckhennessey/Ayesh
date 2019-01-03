@@ -24,7 +24,7 @@ See: http://pillow.readthedocs.io/en/3.1.x/reference/
 
 # ========== Change the text you want to display, and font, here ================
 
-TEXT = 'I love you Ayesha and I miss you so much!       I love you Ayesha and I miss you so much!       I love you Ayesha and I miss you so much!'
+TEXT = 'Welcome home Ayesha!!! I cant wait to see you later today and then to see even more of you tomorrow ;) I missed you so much and im so glad youre home again. I love you so much Ayesh'
 
 FONT = ('/usr/share/fonts/truetype/freefont/FreeSansBold.ttf', 12)
 
